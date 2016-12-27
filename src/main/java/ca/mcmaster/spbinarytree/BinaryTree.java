@@ -142,41 +142,36 @@ public class BinaryTree {
         
         logger.info("getBranchingInstructionTree " + subtreeRoot.nodeID);
         
-        //check left of subtree root
-        if (leftSideSize!=ZERO) {
+        if (leftSideSize==ONE && rightSideSize==ONE){
+            //create the kid which is closer
+            //create the corresponding node on the other side and make recursive call if left and right depths are differnt.
             
-            if (leftSideSize==ONE) {
-                //create the kid, no recursion
-                String descendantNodeID = subtreeRoot.leftDescendantList.get(ZERO);
-                BranchingInstruction cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
-                BranchingInstruction instruction = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
-                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instruction);
+            //This if clause is required to create symmetric children, though we could have created both these kids in one shot
             
-            } else if (leftSideSize==TWO && rightSideSize==ZERO) {
+            String leftDescendantNodeID =subtreeRoot.leftDescendantList.get(ZERO);            
+            BranchingInstruction cumulativeBranchingInstructionsLeft= this.activeLeafs.get(leftDescendantNodeID ).cumulativeBranchingInstructions;
+            int depthLeft = cumulativeBranchingInstructionsLeft.size() -subtreeRoot.cumulativeBranchingInstructions.size();
+            BranchingInstruction instructionLeft = cumulativeBranchingInstructionsLeft.subtract( subtreeRoot.cumulativeBranchingInstructions);
+                               
+            String rightDescendantNodeID =subtreeRoot.rightDescendantList.get(ZERO);
+            BranchingInstruction cumulativeBranchingInstructionsRight= this.activeLeafs.get(rightDescendantNodeID ).cumulativeBranchingInstructions;
+            int depthRight = cumulativeBranchingInstructionsRight.size() -subtreeRoot.cumulativeBranchingInstructions.size();
+            BranchingInstruction instructionRight = cumulativeBranchingInstructionsRight.subtract( subtreeRoot.cumulativeBranchingInstructions);
+            
+            if (depthLeft> depthRight){
                 
-                //create both kids, no recursion
+                //create right child 
+                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(rightDescendantNodeID),   instructionRight);
                 
-                String descendantNodeID = subtreeRoot.leftDescendantList.get(ZERO);
-                BranchingInstruction cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
-                BranchingInstruction instructionLeft = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
-                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instructionLeft);
-                
-                descendantNodeID = subtreeRoot.leftDescendantList.get(ONE);
-                cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
-                BranchingInstruction instructionRight = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
-                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instructionRight);
-                
-            } else {
-                
-                //create left kid and make recursive call
-                 
+                //create child node on left side at same depth, and make recursive call from it
+                //
+                //Skip  depthRight-1 nodes on the left side
                 BranchingInstruction instruction = subtreeRoot. childBranchingInstructionList.get(ZERO);
-                
                 BinaryTreeNode thisChild= subtreeRoot.childList.get(ZERO);
                 BranchingInstruction compoundInstr = new BranchingInstruction();
                 compoundInstr.merge(instruction);
-                for (int index = ZERO;  index < subtreeRoot.leftSideSkipCount; index++){
-                     
+                for (int index = ZERO;  index <  depthRight-ONE; index++){
+
                     boolean isSkipDirectionLeft =  thisChild.leftDescendantList.size()>ZERO;
                     if (isSkipDirectionLeft) {
                         //skip one node to the left
@@ -188,54 +183,26 @@ public class BinaryTree {
                         thisChild = thisChild .childList.get(ONE)  ;
                     }                   
                 }
-                
+
                 BranchingInstructionNode childNode = new BranchingInstructionNode ( thisChild.nodeID);
                 instructionTree.createChild( subtreeRoot.nodeID, childNode,   compoundInstr);
 
                 //recursive call to left side
                 getBranchingInstructionTree(   thisChild,   instructionTree);
-            } 
-        }
-        
-       
-        //check right of subtree root
-        if (rightSideSize!=ZERO) {
-            
-            if (rightSideSize==ONE) {
-                //create the kid, no recursion
-                String descendantNodeID = subtreeRoot.rightDescendantList.get(ZERO);
-                BranchingInstruction cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
-                BranchingInstruction instruction = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
-                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instruction);
-            
-            } else if (leftSideSize==ZERO && rightSideSize==TWO) {
                 
-                //create both kids, no recursion
+            }else if (depthRight> depthLeft){
                 
-                String descendantNodeID = subtreeRoot.rightDescendantList.get(ZERO);
-                BranchingInstruction cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
-                BranchingInstruction instructionZero = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
-                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instructionZero);
+                //create left child
+                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(leftDescendantNodeID),   instructionLeft);
                 
-                descendantNodeID = subtreeRoot.rightDescendantList.get(ONE);
-                cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
-                BranchingInstruction instructionONE = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
-                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instructionONE);
-                
-            } else   {
-                
-                //create right side kid and make recursive call, may skip over few descendants
-                       
-                //get  instruction for creating right side child
+                //skip depthLeft-1 nodes on the right, create the kid, and make recursive call
                 BranchingInstruction instruction = subtreeRoot. childBranchingInstructionList.get(ONE);
-                //get right side kid
                 BinaryTreeNode thisChild= subtreeRoot.childList.get(ONE);
                 
-                //prepare compund instruction in case we are skipping over some desecndants
                 BranchingInstruction compoundInstr = new BranchingInstruction();
                 compoundInstr.merge(instruction);
-                for (int index = ZERO;  index < subtreeRoot.rightSideSkipCount; index++){
-                      
+                for (int index = ZERO;  index <  depthLeft-ONE; index++){
+
                     boolean isSkipDirectionLeft =  thisChild.leftDescendantList.size()>ZERO;
                     if (isSkipDirectionLeft) {
                         //skip one node to the left
@@ -247,17 +214,138 @@ public class BinaryTree {
                         thisChild = thisChild .childList.get(ONE)  ;
                     }                   
                 }
-                
+
                 BranchingInstructionNode childNode = new BranchingInstructionNode ( thisChild.nodeID);
                 instructionTree.createChild( subtreeRoot.nodeID, childNode,   compoundInstr);
 
                 //recursive call to right side
                 getBranchingInstructionTree(   thisChild,   instructionTree);
-                   
-            } 
-        }
-        
-        
+                
+            }else {
+                //must be equal, create both kids and no recursion
+                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(leftDescendantNodeID),   instructionLeft);
+                instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(rightDescendantNodeID),   instructionRight);
+            }
+            
+        }else {  // case when   not ( left==1 and right==1)
+            
+            //check left of subtree root
+            if (leftSideSize!=ZERO) {
+
+                if (leftSideSize==ONE) {
+                    //create the kid, no recursion
+                    String descendantNodeID = subtreeRoot.leftDescendantList.get(ZERO);
+                    BranchingInstruction cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
+                    BranchingInstruction instruction = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
+                    instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instruction);
+
+                } /*else if (leftSideSize==TWO && rightSideSize==ZERO) {
+
+                    //create both kids, no recursion
+
+                    String descendantNodeID = subtreeRoot.leftDescendantList.get(ZERO);
+                    BranchingInstruction cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
+                    BranchingInstruction instructionLeft = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
+                    instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instructionLeft);
+
+                    descendantNodeID = subtreeRoot.leftDescendantList.get(ONE);
+                    cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
+                    BranchingInstruction instructionRight = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
+                    instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instructionRight);
+
+                }*/ else {
+
+                    //create left kid and make recursive call, may skip over few descendents
+
+                    BranchingInstruction instruction = subtreeRoot. childBranchingInstructionList.get(ZERO);
+
+                    BinaryTreeNode thisChild= subtreeRoot.childList.get(ZERO);
+                    BranchingInstruction compoundInstr = new BranchingInstruction();
+                    compoundInstr.merge(instruction);
+                    for (int index = ZERO;  index < subtreeRoot.leftSideSkipCount; index++){
+
+                        boolean isSkipDirectionLeft =  thisChild.leftDescendantList.size()>ZERO;
+                        if (isSkipDirectionLeft) {
+                            //skip one node to the left
+                            compoundInstr .merge(thisChild.childBranchingInstructionList.get(ZERO));
+                            thisChild = thisChild .childList.get(ZERO)  ;
+                        }else {
+                            //skip to the right
+                            compoundInstr .merge(thisChild.childBranchingInstructionList.get(ONE));
+                            thisChild = thisChild .childList.get(ONE)  ;
+                        }                   
+                    }
+
+                    BranchingInstructionNode childNode = new BranchingInstructionNode ( thisChild.nodeID);
+                    instructionTree.createChild( subtreeRoot.nodeID, childNode,   compoundInstr);
+
+                    //recursive call to left side
+                    getBranchingInstructionTree(   thisChild,   instructionTree);
+                } //end if else leftside == 1
+            }//end if left side !=0
+
+            //check right of subtree root
+            if (rightSideSize!=ZERO) {
+
+                if (rightSideSize==ONE) {
+                    //create the kid, no recursion
+                    String descendantNodeID = subtreeRoot.rightDescendantList.get(ZERO);
+                    BranchingInstruction cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
+                    BranchingInstruction instruction = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
+                    instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instruction);
+
+                } /*else if (leftSideSize==ZERO && rightSideSize==TWO) {
+
+                    //create both kids, no recursion
+
+                    String descendantNodeID = subtreeRoot.rightDescendantList.get(ZERO);
+                    BranchingInstruction cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
+                    BranchingInstruction instructionZero = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
+                    instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instructionZero);
+
+                    descendantNodeID = subtreeRoot.rightDescendantList.get(ONE);
+                    cumulativeBranchingInstructions= this.activeLeafs.get(descendantNodeID ).cumulativeBranchingInstructions;
+                    BranchingInstruction instructionONE = cumulativeBranchingInstructions.subtract( subtreeRoot.cumulativeBranchingInstructions);
+                    instructionTree.createChild( subtreeRoot.nodeID, new BranchingInstructionNode(descendantNodeID),   instructionONE);
+
+                }*/ else   {
+
+                    //create right side kid and make recursive call, may skip over few descendants
+
+                    //get  instruction for creating right side child
+                    BranchingInstruction instruction = subtreeRoot. childBranchingInstructionList.get(ONE);
+                    //get right side kid
+                    BinaryTreeNode thisChild= subtreeRoot.childList.get(ONE);
+
+                    //prepare compund instruction in case we are skipping over some desecndants
+                    BranchingInstruction compoundInstr = new BranchingInstruction();
+                    compoundInstr.merge(instruction);
+                    for (int index = ZERO;  index < subtreeRoot.rightSideSkipCount; index++){
+
+                        boolean isSkipDirectionLeft =  thisChild.leftDescendantList.size()>ZERO;
+                        if (isSkipDirectionLeft) {
+                            //skip one node to the left
+                            compoundInstr .merge(thisChild.childBranchingInstructionList.get(ZERO));
+                            thisChild = thisChild .childList.get(ZERO)  ;
+                        }else {
+                            //skip to the right
+                            compoundInstr .merge(thisChild.childBranchingInstructionList.get(ONE));
+                            thisChild = thisChild .childList.get(ONE)  ;
+                        }                   
+                    }
+
+                    BranchingInstructionNode childNode = new BranchingInstructionNode ( thisChild.nodeID);
+                    instructionTree.createChild( subtreeRoot.nodeID, childNode,   compoundInstr);
+
+                    //recursive call to right side
+                    getBranchingInstructionTree(   thisChild,   instructionTree);
+
+                } //end if else right side == 1
+                
+            }//end if right size !=0
+
+        } //end if else both left and right ===0
+       
     }
     
     
@@ -300,8 +388,8 @@ public class BinaryTree {
                     
                     String currentNodeID = currentNode.nodeID;
                     
-                    boolean canSelfBeSkippedOver = currentNode.leftDescendantList.size() ==ZERO && currentNode.rightDescendantList.size() > TWO;
-                    canSelfBeSkippedOver = canSelfBeSkippedOver || (currentNode.rightDescendantList.size() ==ZERO && currentNode. leftDescendantList .size() > TWO);
+                    boolean canSelfBeSkippedOver = currentNode.leftDescendantList.size() ==ZERO && currentNode.rightDescendantList.size() >= TWO;
+                    canSelfBeSkippedOver = canSelfBeSkippedOver || (currentNode.rightDescendantList.size() ==ZERO && currentNode. leftDescendantList .size() >= TWO);
 
                     Boolean amITheLeftChild = parentNode.childList.get(ZERO).nodeID.equals(currentNodeID );
                     
@@ -374,6 +462,27 @@ public class BinaryTree {
         return result;
     }
     
-   
+    //function added for testing purposes
+    public boolean isLeftSideLeaf (String nodeID ){
+       
+        BinaryTreeNode leaf = this.activeLeafs.get( nodeID);
+        BinaryTreeNode parent = leaf.parent;
+        BinaryTreeNode child = null;
+        
+        while (parent != null){
+            child = leaf;
+            leaf = parent;
+            parent = leaf.parent;
+        }
+        
+        //check if child  is on left side of node
+        return leaf.childList.get(ZERO).nodeID.equals( child.nodeID);
+         
+    }
+    
+    //function added for testing purposes
+    public boolean containsLeaf(String nodeID) {
+        return this.activeLeafs.get( nodeID)!=null;
+    }
     
 }
